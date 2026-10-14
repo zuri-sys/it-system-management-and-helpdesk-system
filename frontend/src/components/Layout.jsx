@@ -11,9 +11,6 @@ export default function Layout() {
       </a>
       <header>
         <Link className="brand" to="/tickets">
-          <span className="brand-mark" aria-hidden="true">
-            IT
-          </span>
           <span>
             IT Helpdesk<small>Ticket management</small>
           </span>
