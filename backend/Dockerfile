@@ -9,10 +9,13 @@ RUN apt-get update \
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 WORKDIR /var/www/html
-COPY . .
-
 ENV COMPOSER_ALLOW_SUPERUSER=1
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts \
+
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts --no-autoloader
+
+COPY . .
+RUN composer dump-autoload --no-dev --optimize --no-scripts \
     && php artisan package:discover --ansi \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwX storage bootstrap/cache
