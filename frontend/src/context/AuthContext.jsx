@@ -1,33 +1,81 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { request } from "../api";
+import { getToken, setToken, onUnauthorized } from "../auth";
 
 const AuthContext = createContext(null);
-const storageKey = "helpdesk.login";
-
-function readLogin() {
-  try {
-    return sessionStorage.getItem(storageKey) === "true";
-  } catch {
-    return false;
-  }
-}
 
 export function AuthProvider({ children }) {
-  const [loggedIn, setLoggedIn] = useState(readLogin);
-  function updateLogin(value) {
-    try {
-      if (value) sessionStorage.setItem(storageKey, "true");
-      else sessionStorage.removeItem(storageKey);
-    } catch {
-      /* Login still works when browser storage is unavailable. */
+  const [user, setUser] = useState(null);
+  const [checking, setChecking] = useState(() => Boolean(getToken()));
+  const [authError, setAuthError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(
+    () =>
+      onUnauthorized(() => {
+        setUser(null);
+        setAuthError("");
+        setChecking(false);
+      }),
+    [],
+  );
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      setChecking(false);
+      return;
     }
-    setLoggedIn(value);
+    const controller = new AbortController();
+    setChecking(true);
+    setAuthError("");
+    request("/auth/me", { signal: controller.signal })
+      .then((data) => {
+        if (!controller.signal.aborted && getToken() === token)
+          setUser(data.user);
+      })
+      .catch((error) => {
+        if (controller.signal.aborted || (getToken() && getToken() !== token))
+          return;
+        if (error.status === 401) {
+          setUser(null);
+          setToken(null);
+        } else setAuthError(error.message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setChecking(false);
+      });
+    return () => controller.abort();
+  }, [attempt]);
+
+  async function login(username, password) {
+    const data = await request("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    });
+    setToken(data.token);
+    setUser(data.user);
+    setAuthError("");
+    setChecking(false);
   }
+
+  async function logout() {
+    await request("/auth/logout", { method: "POST" });
+    setToken(null);
+    setUser(null);
+    setAuthError("");
+  }
+
   return (
     <AuthContext.Provider
       value={{
-        loggedIn,
-        login: () => updateLogin(true),
-        logout: () => updateLogin(false),
+        user,
+        loggedIn: Boolean(user),
+        checking,
+        authError,
+        login,
+        logout,
+        retryAuth: () => setAttempt((value) => value + 1),
       }}
     >
       {children}

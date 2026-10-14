@@ -3,18 +3,38 @@ import { useAuth } from "../context/AuthContext";
 import { Navigate } from "react-router-dom";
 
 export default function LoginPage() {
-  const { loggedIn, login } = useAuth();
+  const { loggedIn, login, checking } = useAuth();
   const [error, setError] = useState("");
-  function submit(event) {
+  const [busy, setBusy] = useState(false);
+  async function submit(event) {
     event.preventDefault();
+    if (busy) return;
     const data = new FormData(event.currentTarget);
-    if (
-      data.get("username") === "itadmin" &&
-      data.get("password") === "helpdesk123"
-    )
-      login();
-    else setError("Incorrect username or password.");
+    setError("");
+    setBusy(true);
+    try {
+      await login(
+        String(data.get("username")).trim(),
+        String(data.get("password")),
+      );
+    } catch (error) {
+      setError(
+        error.fields?.username?.[0] ||
+          error.fields?.password?.[0] ||
+          (error.status === 429
+            ? "Too many login attempts. Please wait one minute."
+            : error.message),
+      );
+    } finally {
+      setBusy(false);
+    }
   }
+  if (checking)
+    return (
+      <main className="login">
+        <p role="status">Checking your session...</p>
+      </main>
+    );
   if (loggedIn) return <Navigate to="/tickets" replace />;
   return (
     <main className="login">
@@ -28,6 +48,7 @@ export default function LoginPage() {
               name="username"
               autoComplete="username"
               required
+              disabled={busy}
               aria-describedby={error ? "login-error" : undefined}
             />
           </label>
@@ -38,6 +59,7 @@ export default function LoginPage() {
               type="password"
               autoComplete="current-password"
               required
+              disabled={busy}
               aria-describedby={error ? "login-error" : undefined}
             />
           </label>
@@ -46,7 +68,9 @@ export default function LoginPage() {
               {error}
             </p>
           )}
-          <button type="submit">Log In</button>
+          <button type="submit" disabled={busy}>
+            {busy ? "Logging In..." : "Log In"}
+          </button>
         </form>
       </section>
     </main>

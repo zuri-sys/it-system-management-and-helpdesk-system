@@ -1,9 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Layout() {
   const { logout } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function handleLogout() {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await logout();
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <>
       <a className="skip-link" href="#main-content">
@@ -15,9 +29,16 @@ export default function Layout() {
             IT Helpdesk<small>Ticket management</small>
           </span>
         </Link>
-        <button className="secondary" onClick={logout}>
-          Log Out
-        </button>
+        <div>
+          <button className="secondary" onClick={handleLogout} disabled={busy}>
+            {busy ? "Logging Out..." : "Log Out"}
+          </button>
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+        </div>
       </header>
       <main id="main-content" className="container">
         <Outlet />

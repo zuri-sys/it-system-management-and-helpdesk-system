@@ -1,6 +1,9 @@
+import { getToken, expireSession } from "./auth.js";
+
 const baseUrl = (import.meta.env?.VITE_API_URL || "/api").replace(/\/$/, "");
 
 export async function request(path, options = {}) {
+  const token = getToken();
   let response;
   try {
     response = await fetch(baseUrl + path, {
@@ -8,6 +11,7 @@ export async function request(path, options = {}) {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       },
     });
@@ -19,10 +23,12 @@ export async function request(path, options = {}) {
   if (response.status === 204) return null;
   const data = await response.json().catch(() => null);
   if (!response.ok) {
+    if (response.status === 401) expireSession(token);
     const error = new Error(
       data?.message || "The request failed. Please try again.",
     );
     error.fields = data?.errors || {};
+    error.status = response.status;
     throw error;
   }
   if (data === null)
