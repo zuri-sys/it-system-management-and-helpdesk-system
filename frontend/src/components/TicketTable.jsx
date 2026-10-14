@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { date } from "../constants/tickets";
+import TicketBadge from "./TicketBadge";
 
 export default function TicketTable({ tickets }) {
   return (
@@ -33,9 +34,13 @@ export default function TicketTable({ tickets }) {
               <td>
                 <Link to={`/tickets/${ticket.id}`}>{ticket.subject}</Link>
               </td>
-              <td>{ticket.priority}</td>
-              <td>{ticket.status}</td>
-              <td>{date(ticket.created_at)}</td>
+              <td>
+                <TicketBadge value={ticket.priority} />
+              </td>
+              <td>
+                <TicketBadge value={ticket.status} />
+              </td>
+              <td className="date-cell">{date(ticket.created_at)}</td>
             </tr>
           ))}
         </tbody>
