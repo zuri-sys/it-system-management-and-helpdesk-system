@@ -78,4 +78,14 @@ class AuthTest extends TestCase
         $this->assertTrue(Hash::check('changed-password', $user->fresh()->password));
         $this->assertDatabaseCount('users', 1);
     }
+
+    public function test_hardcoded_credentials_can_log_in_with_production_settings(): void
+    {
+        $this->app->detectEnvironment(fn (): string => 'production');
+        $this->artisan('db:seed', ['--class' => AdminUserSeeder::class, '--force' => true])->assertExitCode(0);
+
+        $this->postJson('/api/auth/login', ['username' => 'itadmin', 'password' => 'helpdesk123'])
+            ->assertOk()->assertJsonPath('user.username', 'itadmin');
+        $this->assertTrue(Hash::check('helpdesk123', User::where('username', 'itadmin')->firstOrFail()->password));
+    }
 }

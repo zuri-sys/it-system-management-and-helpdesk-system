@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use RuntimeException;
 
 class AdminUserSeeder extends Seeder
 {
@@ -16,10 +15,6 @@ class AdminUserSeeder extends Seeder
         }
 
         $password = config('helpdesk.admin_password');
-        if (! is_string($password) || strlen($password) < 8) {
-            throw new RuntimeException('Set ADMIN_PASSWORD to at least eight characters before creating the admin account.');
-        }
-
         User::create([
             'name' => 'System Administrator',
             'username' => $username,
