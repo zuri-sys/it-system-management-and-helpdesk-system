@@ -10,7 +10,14 @@ export default function Layout() {
         Skip to content
       </a>
       <header>
-        <Link to="/tickets">IT Helpdesk System</Link>
+        <Link className="brand" to="/tickets">
+          <span className="brand-mark" aria-hidden="true">
+            IT
+          </span>
+          <span>
+            IT Helpdesk<small>Ticket management</small>
+          </span>
+        </Link>
         <button className="secondary" onClick={logout}>
           Log Out
         </button>

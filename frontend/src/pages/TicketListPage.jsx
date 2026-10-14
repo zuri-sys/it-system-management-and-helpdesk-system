@@ -9,7 +9,17 @@ export default function TicketListPage() {
   const location = useLocation();
   return (
     <>
-      <h1>Helpdesk Tickets</h1>
+      <div className="page-heading">
+        <div>
+          <h1>Helpdesk Tickets</h1>
+          <p>View requests and keep track of their progress.</p>
+        </div>
+        {tickets && (
+          <span className="ticket-count">
+            {tickets.length} {tickets.length === 1 ? "ticket" : "tickets"}
+          </span>
+        )}
+      </div>
       {location.state?.message && (
         <p role="status" className="success">
           {location.state.message}
@@ -20,7 +30,13 @@ export default function TicketListPage() {
       ) : !tickets ? (
         <p role="status">Loading tickets...</p>
       ) : !tickets.length ? (
-        <p>No tickets yet. Add a ticket to get started.</p>
+        <section className="panel empty-state">
+          <h2>No tickets yet</h2>
+          <p>Add your first ticket to start tracking a request.</p>
+          <Link className="button-link" to="/tickets/new">
+            Add Ticket
+          </Link>
+        </section>
       ) : (
         <TicketTable tickets={tickets} />
       )}
