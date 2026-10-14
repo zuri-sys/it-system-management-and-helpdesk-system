@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
@@ -20,6 +21,13 @@ class DeploymentTest extends TestCase
     public function test_health_endpoint_is_available(): void
     {
         $this->get('/up')->assertOk();
+    }
+
+    public function test_health_endpoint_reports_a_database_failure(): void
+    {
+        DB::shouldReceive('connection')->once()->andThrow(new \RuntimeException('Database unavailable.'));
+
+        $this->get('/up')->assertStatus(500);
     }
 
     public function test_unknown_origin_is_not_allowed_by_cors(): void
